@@ -4,13 +4,13 @@ import { FaTimes, FaSave, FaTrash } from 'react-icons/fa'; // Added Trash Icon
 import axios from 'axios';
 
 const CRITERIA = {
-	movie: ['Plot', 'Characters', 'Music', 'Cinematography', 'Enjoyment'],
-	tv: ['Plot', 'Characters', 'Music', 'Visuals', 'Pacing'],
-	anime: ['Story', 'Animation', 'Sound', 'Characters', 'Enjoyment'],
-	game: ['Gameplay', 'Graphics', 'Story', 'Music', 'Fun Factor'],
-	book: ['Story', 'Characters', 'Writing Style', 'Pacing', 'Impact'],
-	manga: ['Story', 'Art', 'Characters', 'Flow', 'Enjoyment'],
-	music: ['Production', 'Vocals', 'Lyrics', 'Replay Value', 'Creativity']
+	movie: ['Plot', 'Characters', 'Music', 'Cinematography', 'Pacing', 'Acting', 'Impact'],
+	tv: ['Plot', 'Characters', 'Music', 'Cinematography', 'Pacing', 'Acting', 'Impact'],
+	anime: ['Plot', 'Animation', 'Sound', 'Characters', 'Impact'],
+	game: ['Gameplay', 'Graphics', 'Plot', 'Music', 'Impact'],
+	book: ['Plot', 'Characters', 'World Building', 'Pacing', 'Impact'],
+	manga: ['Plot', 'Art', 'Characters', 'Pacing', 'Impact'],
+	music: ['Production', 'Vocals', 'Lyrics', 'Replay Value', 'Impact']
 };
 
 export default function ReviewModal({ item, category, onClose, onSave }) {
