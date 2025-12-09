@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "rewrites": [
+    { 
+      "source": "/api/(.*)", 
+      "destination": "/api/search.js" 
+    },
+    { 
+      "source": "/api/reviews", 
+      "destination": "/api/reviews.js" 
+    },
+    { 
+      "source": "/api/auth/login", 
+      "destination": "/api/auth/login.js" 
+    },
+    { 
+      "source": "/(.*)", 
+      "destination": "/frontend/dist/index.html" 
+    }
+  ]
+}
