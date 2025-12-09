@@ -2,7 +2,7 @@
   "version": 2,
   "rewrites": [
     { 
-      "source": "/api/(.*)", 
+      "source": "/api/search", 
       "destination": "/api/search.js" 
     },
     { 
@@ -15,7 +15,7 @@
     },
     { 
       "source": "/(.*)", 
-      "destination": "/frontend/dist/index.html" 
+      "destination": "/index.html" 
     }
   ]
 }
