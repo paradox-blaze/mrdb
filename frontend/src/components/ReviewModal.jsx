@@ -54,7 +54,7 @@ export default function ReviewModal({ item, category, onClose, onSave }) {
 			// 2. SMART SAVE (Update vs Add)
 			if (item._id) {
 				// We have a MongoDB ID, so this is an UPDATE
-				await axios.put('/api/review/update', {
+				await axios.put('/api/reviews', {
 					id: item._id,
 					reviewText,
 					ratingBreakdown: ratings
@@ -70,7 +70,7 @@ export default function ReviewModal({ item, category, onClose, onSave }) {
 					reviewText,
 					ratingBreakdown: ratings,
 				};
-				await axios.post('/api/review/add', payload);
+				await axios.post('/api/reviews', payload);
 			}
 
 			onSave(); // Refresh list
@@ -89,7 +89,7 @@ export default function ReviewModal({ item, category, onClose, onSave }) {
 
 		setIsDeleting(true);
 		try {
-			await axios.delete(`/api/review/delete?id=${item._id}`);
+			await axios.delete(`/api/reviews?id=${item._id}`);
 			onSave();
 			onClose();
 		} catch (err) {

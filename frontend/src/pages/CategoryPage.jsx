@@ -36,7 +36,7 @@ export default function CategoryPage({ type }) {
 	async function fetchSavedReviews() {
 		try {
 			setLoading(true);
-			const res = await axios.get(`/api/review/list?category=${type}`);
+			const res = await axios.get(`/api/reviews?category=${type}`);
 			setSavedReviews(res.data);
 		} catch (err) {
 			console.error("Failed to fetch reviews", err);
@@ -49,7 +49,7 @@ export default function CategoryPage({ type }) {
 		try {
 			setLoading(true);
 			setError(null);
-			const res = await axios.get(`/api/search/${type}?q=${searchQuery}`);
+			const res = await axios.get(`/api/search?type=${type}&q=${searchQuery}`);
 
 			console.log("Search API Response:", res.data); // <--- Add this!
 
