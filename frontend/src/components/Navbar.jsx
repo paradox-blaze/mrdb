@@ -4,8 +4,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaSearch, FaUserFriends, FaChevronDown, FaBars, FaTimes } from 'react-icons/fa';
 import clsx from 'clsx';
 
-// The hardcoded friend list
-const FRIENDS = ["Anuj", "Dhanush", "Alwin"];
+// 1. DEFINE THE MASTER LIST OF ALL USERS HERE
+const ALL_USERS = ["Aneesh", "Anuj", "Alwin", "Dhanush"];
 
 const navItems = [
 	{ name: 'Movies', path: '/movies' },
@@ -20,25 +20,32 @@ const navItems = [
 export default function Navbar({ onSearch }) {
 	const [query, setQuery] = useState('');
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false); // For the friend dropdown
-	const [showSearch, setShowSearch] = useState(false); // For mobile search toggle
+	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+	const [showSearch, setShowSearch] = useState(false);
+
+	// 2. GET CURRENT LOGGED IN USER
+	// We default to "Aneesh" (or whoever is the main admin) if not logged in, 
+	// but ideally this comes from localStorage set during login.
+	const loggedInUser = localStorage.getItem('currentUser') || "Aneesh";
+
+	// 3. FILTER THE LIST
+	// The dropdown should contain everyone EXCEPT the logged-in user.
+	const otherUsers = ALL_USERS.filter(user => user !== loggedInUser);
 
 	const location = useLocation();
 	const navigate = useNavigate();
 
-	// --- 1. BETTER METHOD: URL PARSING ---
-	// Manually parse the URL to decide "Who are we viewing?"
-	// Example URL: /u/Alice/games  -> parts ['', 'u', 'Alice', 'games']
-	// Example URL: /games          -> parts ['', 'games']
+	// --- URL PARSING ---
 	const pathParts = location.pathname.split('/');
 	const isFriendView = pathParts[1] === 'u';
+
+	// Who are we currently LOOKING at?
+	// If URL is /u/Alwin/games -> Alwin
+	// If URL is /games -> Me (The logged-in user)
 	const currentViewedUser = isFriendView ? pathParts[2] : 'Me';
 
-	// Figure out the current active category (e.g., 'movies' or 'games')
-	// If /u/Alice/games, category is index 3. If /games, category is index 1.
 	const currentCategory = pathParts[isFriendView ? 3 : 1] || 'movies';
 
-	// Close menus when route changes
 	useEffect(() => {
 		setIsMobileMenuOpen(false);
 		setIsUserMenuOpen(false);
@@ -48,13 +55,10 @@ export default function Navbar({ onSearch }) {
 
 	const handleSearchSubmit = (e) => {
 		e.preventDefault();
-		if (query.trim()) {
-			onSearch(query);
-		}
+		if (query.trim()) onSearch(query);
 	};
 
 	const handleUserSwitch = (user) => {
-		// Keep the user on the same category they were looking at (e.g., switch from My Games -> Alice's Games)
 		if (user === 'Me') {
 			navigate(`/${currentCategory}`);
 		} else {
@@ -63,13 +67,11 @@ export default function Navbar({ onSearch }) {
 		setIsUserMenuOpen(false);
 	};
 
-	// Helper to construct links based on who we are viewing
 	const getLink = (itemPath) => {
 		if (isFriendView) {
-			// /movies -> /u/Alice/movies
-			return `/u/${currentViewedUser}${itemPath}`;
+			return `/u/${currentViewedUser}${itemPath}`; // Stay in friend's view
 		}
-		return itemPath;
+		return itemPath; // Stay in my view
 	};
 
 	return (
@@ -77,9 +79,8 @@ export default function Navbar({ onSearch }) {
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 
-					{/* --- LEFT: LOGO & USER SWITCHER --- */}
+					{/* LEFT: Logo & Switcher */}
 					<div className="flex items-center gap-4 md:gap-6">
-						{/* Logo */}
 						<Link to="/" className="flex items-center gap-2 flex-shrink-0">
 							<img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
 							<span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent hidden sm:block">
@@ -87,7 +88,6 @@ export default function Navbar({ onSearch }) {
 							</span>
 						</Link>
 
-						{/* User Dropdown */}
 						<div className="relative">
 							<button
 								onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -95,7 +95,10 @@ export default function Navbar({ onSearch }) {
 							>
 								<FaUserFriends className="text-primary" />
 								<span className="truncate max-w-[100px] sm:max-w-none">
-									{currentViewedUser === 'Me' ? 'My Collection' : `${currentViewedUser}'s Collection`}
+									{/* DISPLAY LOGIC: Show proper name based on view */}
+									{currentViewedUser === 'Me'
+										? `${loggedInUser}'s Collection`
+										: `${currentViewedUser}'s Collection`}
 								</span>
 								<FaChevronDown size={10} />
 							</button>
@@ -106,14 +109,16 @@ export default function Navbar({ onSearch }) {
 										Switch Profile
 									</div>
 
+									{/* OPTION 1: ME (Logged In User) */}
 									<button onClick={() => handleUserSwitch('Me')} className="w-full text-left px-4 py-3 hover:bg-white/10 text-white flex items-center gap-2">
-										<span className="w-2 h-2 rounded-full bg-accent"></span>
-										Me (My Collection)
+										<span className={`w-2 h-2 rounded-full ${currentViewedUser === 'Me' ? 'bg-accent' : 'bg-gray-600'}`}></span>
+										{loggedInUser} (Me)
 									</button>
 
 									<div className="border-t border-white/10 my-1"></div>
 
-									{FRIENDS.map(friend => (
+									{/* OPTION 2: EVERYONE ELSE (Dynamic List) */}
+									{otherUsers.map(friend => (
 										<button
 											key={friend}
 											onClick={() => handleUserSwitch(friend)}
@@ -128,32 +133,23 @@ export default function Navbar({ onSearch }) {
 						</div>
 					</div>
 
-					{/* --- CENTER: DESKTOP NAV LINKS --- */}
+					{/* ... CENTER and RIGHT sections remain the same ... */}
 					<div className="hidden md:flex space-x-1">
+						{/* Copy existing desktop nav items loop here */}
 						{navItems.map((item) => {
 							const targetLink = getLink(item.path);
-							// Check if active (ignoring the /u/Alice prefix for valid matching)
 							const isActive = location.pathname.includes(item.path);
-
 							return (
-								<Link
-									key={item.name}
-									to={targetLink}
-									className={clsx(
-										"px-3 py-2 rounded-md text-sm transition-colors font-medium",
-										isActive ? "text-white bg-white/10" : "text-gray-400 hover:text-white hover:bg-white/5"
-									)}
-								>
+								<Link key={item.name} to={targetLink} className={clsx("px-3 py-2 rounded-md text-sm transition-colors font-medium", isActive ? "text-white bg-white/10" : "text-gray-400 hover:text-white hover:bg-white/5")}>
 									{item.name}
 								</Link>
 							);
 						})}
 					</div>
 
-					{/* --- RIGHT: SEARCH & MOBILE MENU --- */}
+					{/* RIGHT: Search & Mobile Menu */}
 					<div className="flex items-center gap-2 sm:gap-4">
-
-						{/* Search Bar */}
+						{/* Copy existing search bar logic here */}
 						<div className={clsx("flex items-center transition-all duration-300", showSearch ? "absolute top-16 left-0 w-full px-4 bg-background pb-4 border-b border-white/10 md:static md:w-auto md:p-0 md:bg-transparent md:border-none" : "w-auto")}>
 							{showSearch ? (
 								<form onSubmit={handleSearchSubmit} className="relative w-full md:w-64">
@@ -165,34 +161,24 @@ export default function Navbar({ onSearch }) {
 										className="w-full bg-secondary/50 text-white pl-4 pr-10 py-1.5 rounded-full border border-white/10 focus:outline-none focus:border-accent placeholder-gray-500"
 										autoFocus
 									/>
-									<button type="button" onClick={() => setShowSearch(false)} className="absolute right-3 top-2 text-gray-400 hover:text-white">
-										<FaTimes size={14} />
-									</button>
+									<button type="button" onClick={() => setShowSearch(false)} className="absolute right-3 top-2 text-gray-400 hover:text-white"><FaTimes size={14} /></button>
 								</form>
 							) : (
-								<button
-									onClick={() => setShowSearch(true)}
-									className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-								>
-									<FaSearch />
-								</button>
+								<button onClick={() => setShowSearch(true)} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors"><FaSearch /></button>
 							)}
 						</div>
 
-						{/* Mobile Hamburger Button */}
 						<div className="flex md:hidden">
-							<button
-								onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-								className="bg-white/5 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-white/10 focus:outline-none"
-							>
+							<button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="bg-white/5 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-white/10 focus:outline-none">
 								{isMobileMenuOpen ? <FaTimes /> : <FaBars />}
 							</button>
 						</div>
 					</div>
+
 				</div>
 			</div>
 
-			{/* --- MOBILE DROPDOWN MENU --- */}
+			{/* MOBILE MENU */}
 			{isMobileMenuOpen && (
 				<div className="md:hidden bg-background border-b border-white/10 animate-fade-in">
 					<div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
@@ -200,14 +186,7 @@ export default function Navbar({ onSearch }) {
 							const targetLink = getLink(item.path);
 							const isActive = location.pathname.includes(item.path);
 							return (
-								<Link
-									key={item.name}
-									to={targetLink}
-									className={clsx(
-										"block px-3 py-2 rounded-md text-base font-medium",
-										isActive ? "bg-accent text-white" : "text-gray-300 hover:text-white hover:bg-white/10"
-									)}
-								>
+								<Link key={item.name} to={targetLink} className={clsx("block px-3 py-2 rounded-md text-base font-medium", isActive ? "bg-accent text-white" : "text-gray-300 hover:text-white hover:bg-white/10")}>
 									{item.name}
 								</Link>
 							);
