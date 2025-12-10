@@ -159,7 +159,7 @@ export default function Navbar({ onSearch }) {
 										className="w-full bg-secondary/50 text-white pl-4 pr-10 py-1.5 rounded-full border border-white/10 focus:outline-none focus:border-accent placeholder-gray-500"
 										autoFocus
 									/>
-									<button type="button" onClick={() => setShowSearch(false)} className="absolute right-3 top-2 text-gray-400 hover:text-white"><FaTimes size={14} /></button>
+									<button type="button" onClick={() => setShowSearch(false)} className="absolute right-3 top-2 mt-1.5 text-gray-400 hover:text-white"><FaTimes size={14} /></button>
 								</form>
 							) : (
 								<button onClick={() => setShowSearch(true)} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors"><FaSearch /></button>
