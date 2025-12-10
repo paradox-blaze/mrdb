@@ -1,7 +1,11 @@
+// frontend/src/components/Navbar.jsx
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaSearch, FaBars, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaUserFriends, FaChevronDown, FaBars, FaTimes } from 'react-icons/fa';
 import clsx from 'clsx';
+
+// The hardcoded friend list
+const FRIENDS = ["Anuj", "Dhanush", "Alwin"];
 
 const navItems = [
 	{ name: 'Movies', path: '/movies' },
@@ -14,15 +18,30 @@ const navItems = [
 ];
 
 export default function Navbar({ onSearch }) {
-	const [isOpen, setIsOpen] = useState(false);
-	const [showSearch, setShowSearch] = useState(false);
 	const [query, setQuery] = useState('');
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false); // For the friend dropdown
+	const [showSearch, setShowSearch] = useState(false); // For mobile search toggle
+
 	const location = useLocation();
 	const navigate = useNavigate();
 
-	// Close mobile menu when route changes
+	// --- 1. BETTER METHOD: URL PARSING ---
+	// Manually parse the URL to decide "Who are we viewing?"
+	// Example URL: /u/Alice/games  -> parts ['', 'u', 'Alice', 'games']
+	// Example URL: /games          -> parts ['', 'games']
+	const pathParts = location.pathname.split('/');
+	const isFriendView = pathParts[1] === 'u';
+	const currentViewedUser = isFriendView ? pathParts[2] : 'Me';
+
+	// Figure out the current active category (e.g., 'movies' or 'games')
+	// If /u/Alice/games, category is index 3. If /games, category is index 1.
+	const currentCategory = pathParts[isFriendView ? 3 : 1] || 'movies';
+
+	// Close menus when route changes
 	useEffect(() => {
-		setIsOpen(false);
+		setIsMobileMenuOpen(false);
+		setIsUserMenuOpen(false);
 		setShowSearch(false);
 		setQuery('');
 	}, [location.pathname]);
@@ -30,65 +49,123 @@ export default function Navbar({ onSearch }) {
 	const handleSearchSubmit = (e) => {
 		e.preventDefault();
 		if (query.trim()) {
-			// Pass the query up to the parent or update URL params
-			// We will simply pass it to a prop for now to handle the API call
 			onSearch(query);
 		}
 	};
 
-	const activeCategory = navItems.find(item => location.pathname.startsWith(item.path))?.name || 'Item';
+	const handleUserSwitch = (user) => {
+		// Keep the user on the same category they were looking at (e.g., switch from My Games -> Alice's Games)
+		if (user === 'Me') {
+			navigate(`/${currentCategory}`);
+		} else {
+			navigate(`/u/${user}/${currentCategory}`);
+		}
+		setIsUserMenuOpen(false);
+	};
+
+	// Helper to construct links based on who we are viewing
+	const getLink = (itemPath) => {
+		if (isFriendView) {
+			// /movies -> /u/Alice/movies
+			return `/u/${currentViewedUser}${itemPath}`;
+		}
+		return itemPath;
+	};
 
 	return (
-		<nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
+		<nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-md border-b border-white/10">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 
-					{/* Logo */}
-					<div className="flex-shrink-0">
-						<Link to="/" className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent tracking-wider">
-							MRDB
+					{/* --- LEFT: LOGO & USER SWITCHER --- */}
+					<div className="flex items-center gap-4 md:gap-6">
+						{/* Logo */}
+						<Link to="/" className="flex items-center gap-2 flex-shrink-0">
+							<img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
+							<span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent hidden sm:block">
+								MRDB
+							</span>
 						</Link>
-					</div>
 
-					{/* Desktop Links */}
-					<div className="hidden md:block">
-						<div className="ml-10 flex items-baseline space-x-4">
-							{navItems.map((item) => {
-								const isActive = location.pathname.startsWith(item.path);
-								return (
-									<Link
-										key={item.name}
-										to={item.path}
-										className={clsx(
-											"px-3 py-2 rounded-md text-sm font-medium transition-colors",
-											isActive
-												? "text-white bg-white/10"
-												: "text-gray-300 hover:text-white hover:bg-white/5"
-										)}
-									>
-										{item.name}
-									</Link>
-								);
-							})}
+						{/* User Dropdown */}
+						<div className="relative">
+							<button
+								onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+								className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-300 hover:text-white bg-white/5 px-3 py-1.5 rounded-full transition-colors border border-white/5 hover:border-white/20"
+							>
+								<FaUserFriends className="text-primary" />
+								<span className="truncate max-w-[100px] sm:max-w-none">
+									{currentViewedUser === 'Me' ? 'My Collection' : `${currentViewedUser}'s Collection`}
+								</span>
+								<FaChevronDown size={10} />
+							</button>
+
+							{isUserMenuOpen && (
+								<div className="absolute top-full left-0 mt-2 w-56 bg-secondary border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1 animate-fade-in z-50">
+									<div className="px-4 py-2 text-xs text-gray-500 uppercase font-bold tracking-wider">
+										Switch Profile
+									</div>
+
+									<button onClick={() => handleUserSwitch('Me')} className="w-full text-left px-4 py-3 hover:bg-white/10 text-white flex items-center gap-2">
+										<span className="w-2 h-2 rounded-full bg-accent"></span>
+										Me (My Collection)
+									</button>
+
+									<div className="border-t border-white/10 my-1"></div>
+
+									{FRIENDS.map(friend => (
+										<button
+											key={friend}
+											onClick={() => handleUserSwitch(friend)}
+											className="w-full text-left px-4 py-2 hover:bg-white/10 text-gray-300 hover:text-white flex items-center gap-2"
+										>
+											<span className={`w-2 h-2 rounded-full ${currentViewedUser === friend ? 'bg-primary' : 'bg-gray-600'}`}></span>
+											{friend}
+										</button>
+									))}
+								</div>
+							)}
 						</div>
 					</div>
 
-					{/* Right Side: Search & Mobile Menu */}
-					<div className="flex items-center gap-4">
+					{/* --- CENTER: DESKTOP NAV LINKS --- */}
+					<div className="hidden md:flex space-x-1">
+						{navItems.map((item) => {
+							const targetLink = getLink(item.path);
+							// Check if active (ignoring the /u/Alice prefix for valid matching)
+							const isActive = location.pathname.includes(item.path);
 
-						{/* Search Bar (Expandable) */}
-						<div className={clsx("flex items-center transition-all duration-300", showSearch ? "w-full absolute top-16 left-0 px-4 bg-background pb-4 border-b border-white/10 md:static md:w-auto md:p-0 md:bg-transparent md:border-none" : "w-auto")}>
+							return (
+								<Link
+									key={item.name}
+									to={targetLink}
+									className={clsx(
+										"px-3 py-2 rounded-md text-sm transition-colors font-medium",
+										isActive ? "text-white bg-white/10" : "text-gray-400 hover:text-white hover:bg-white/5"
+									)}
+								>
+									{item.name}
+								</Link>
+							);
+						})}
+					</div>
+
+					{/* --- RIGHT: SEARCH & MOBILE MENU --- */}
+					<div className="flex items-center gap-2 sm:gap-4">
+
+						{/* Search Bar */}
+						<div className={clsx("flex items-center transition-all duration-300", showSearch ? "absolute top-16 left-0 w-full px-4 bg-background pb-4 border-b border-white/10 md:static md:w-auto md:p-0 md:bg-transparent md:border-none" : "w-auto")}>
 							{showSearch ? (
 								<form onSubmit={handleSearchSubmit} className="relative w-full md:w-64">
 									<input
 										type="text"
 										value={query}
 										onChange={(e) => setQuery(e.target.value)}
-										placeholder={`Search ${activeCategory}...`}
-										className="w-full bg-secondary/50 text-white pl-4 pr-10 py-1.5 rounded-full border border-white/10 focus:outline-none focus:border-accent"
+										placeholder={`Search ${currentViewedUser === 'Me' ? 'to add...' : 'this list...'}`}
+										className="w-full bg-secondary/50 text-white pl-4 pr-10 py-1.5 rounded-full border border-white/10 focus:outline-none focus:border-accent placeholder-gray-500"
 										autoFocus
 									/>
-									<button type="button" onClick={() => setShowSearch(false)} className="absolute right-3 mt-1.5 top-1.5 text-gray-400 hover:text-white">
+									<button type="button" onClick={() => setShowSearch(false)} className="absolute right-3 top-2 text-gray-400 hover:text-white">
 										<FaTimes size={14} />
 									</button>
 								</form>
@@ -102,32 +179,39 @@ export default function Navbar({ onSearch }) {
 							)}
 						</div>
 
-						{/* Mobile Menu Button */}
-						<div className="-mr-2 flex md:hidden">
+						{/* Mobile Hamburger Button */}
+						<div className="flex md:hidden">
 							<button
-								onClick={() => setIsOpen(!isOpen)}
-								className="bg-gray-800 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none"
+								onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+								className="bg-white/5 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-white/10 focus:outline-none"
 							>
-								{isOpen ? <FaTimes /> : <FaBars />}
+								{isMobileMenuOpen ? <FaTimes /> : <FaBars />}
 							</button>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			{/* Mobile Menu Dropdown */}
-			{isOpen && (
-				<div className="md:hidden bg-background border-b border-white/10">
+			{/* --- MOBILE DROPDOWN MENU --- */}
+			{isMobileMenuOpen && (
+				<div className="md:hidden bg-background border-b border-white/10 animate-fade-in">
 					<div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-						{navItems.map((item) => (
-							<Link
-								key={item.name}
-								to={item.path}
-								className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
-							>
-								{item.name}
-							</Link>
-						))}
+						{navItems.map((item) => {
+							const targetLink = getLink(item.path);
+							const isActive = location.pathname.includes(item.path);
+							return (
+								<Link
+									key={item.name}
+									to={targetLink}
+									className={clsx(
+										"block px-3 py-2 rounded-md text-base font-medium",
+										isActive ? "bg-accent text-white" : "text-gray-300 hover:text-white hover:bg-white/10"
+									)}
+								>
+									{item.name}
+								</Link>
+							);
+						})}
 					</div>
 				</div>
 			)}

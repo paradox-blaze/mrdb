@@ -13,20 +13,17 @@ const CRITERIA = {
 	music: ['Production', 'Vocals', 'Lyrics', 'Replay Value', 'Impact']
 };
 
-export default function ReviewModal({ item, category, onClose, onSave }) {
+export default function ReviewModal({ item, category, onClose, onSave, readOnly }) { // Added readOnly prop
 	const [reviewText, setReviewText] = useState('');
 	const [ratings, setRatings] = useState({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
-	const isLoggedIn = !!localStorage.getItem('token');
-	// 1. SMART INITIALIZATION
+
 	useEffect(() => {
 		if (item.ratingBreakdown) {
-			// EDIT MODE: Load existing data
 			setRatings(item.ratingBreakdown);
 			setReviewText(item.reviewText || '');
 		} else {
-			// NEW MODE: Load defaults (5/10)
 			const initial = {};
 			const fields = CRITERIA[category] || ['General'];
 			fields.forEach(f => initial[f.toLowerCase()] = 5);
@@ -36,6 +33,7 @@ export default function ReviewModal({ item, category, onClose, onSave }) {
 	}, [item, category]);
 
 	const handleRatingChange = (key, value) => {
+		if (readOnly) return; // Block changes
 		setRatings(prev => ({ ...prev, [key]: Number(value) }));
 	};
 
@@ -46,21 +44,17 @@ export default function ReviewModal({ item, category, onClose, onSave }) {
 		return (sum / values.length).toFixed(1);
 	};
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
+	const handleSubmit = async () => {
+		if (readOnly) return;
 		setIsSubmitting(true);
-
 		try {
-			// 2. SMART SAVE (Update vs Add)
 			if (item._id) {
-				// We have a MongoDB ID, so this is an UPDATE
 				await axios.put('/api/reviews', {
 					id: item._id,
 					reviewText,
 					ratingBreakdown: ratings
 				});
 			} else {
-				// No ID, so this is a NEW ADD
 				const payload = {
 					title: item.title,
 					category: category,
@@ -72,21 +66,18 @@ export default function ReviewModal({ item, category, onClose, onSave }) {
 				};
 				await axios.post('/api/reviews', payload);
 			}
-
-			onSave(); // Refresh list
+			onSave();
 			onClose();
 		} catch (err) {
-			alert('Failed to save review');
-			console.error(err);
+			alert('Failed to save');
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
-	// 3. DELETE FUNCTIONALITY
 	const handleDelete = async () => {
-		if (!confirm("Are you sure you want to delete this review?")) return;
-
+		if (readOnly) return;
+		if (!confirm("Delete this review?")) return;
 		setIsDeleting(true);
 		try {
 			await axios.delete(`/api/reviews?id=${item._id}`);
@@ -111,15 +102,10 @@ export default function ReviewModal({ item, category, onClose, onSave }) {
 						</div>
 						<div>
 							<h2 className="text-2xl font-bold text-white">{item.title}</h2>
-							<p className="text-primary font-medium">
-								{category.toUpperCase()} • {item.year || item.subtitle}
-							</p>
-							{/* Show "Editing" badge if in edit mode */}
-							{item._id && (
-								<span className="inline-block mt-2 text-xs bg-accent/20 text-accent px-2 py-1 rounded border border-accent/50">
-									EDITING REVIEW
-								</span>
-							)}
+							<div className="flex items-center gap-2 mt-1">
+								<span className="text-primary font-medium text-sm uppercase tracking-wide">{category}</span>
+								{readOnly && <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-gray-300">READ ONLY</span>}
+							</div>
 						</div>
 					</div>
 					<button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
@@ -127,16 +113,14 @@ export default function ReviewModal({ item, category, onClose, onSave }) {
 					</button>
 				</div>
 
-				{/* Scrollable Content */}
+				{/* Content */}
 				<div className="p-6 overflow-y-auto custom-scrollbar space-y-8">
-
-					{/* Rating Sliders Grid */}
+					{/* Ratings */}
 					<div>
 						<div className="flex justify-between items-end mb-4">
 							<h3 className="text-lg font-semibold text-white border-l-4 border-accent pl-3">Ratings</h3>
 							<span className="text-3xl font-bold text-yellow-400">{calculateAverage()}</span>
 						</div>
-
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
 							{Object.keys(ratings).map((key) => (
 								<div key={key}>
@@ -144,57 +128,53 @@ export default function ReviewModal({ item, category, onClose, onSave }) {
 										<label className="capitalize">{key}</label>
 										<span className="font-mono text-accent">{ratings[key]}</span>
 									</div>
-									<input disabled={!isLoggedIn}
+									<input
 										type="range"
-										min="1"
-										max="10"
-										step="0.5"
+										min="1" max="10" step="0.5"
 										value={ratings[key]}
 										onChange={(e) => handleRatingChange(key, e.target.value)}
-										className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-accent hover:accent-primary transition-all"
+										disabled={readOnly} // <--- DISABLED IF READ ONLY
+										className={`w-full h-2 rounded-lg appearance-none transition-all ${readOnly ? 'bg-gray-700 cursor-not-allowed' : 'bg-black/40 cursor-pointer accent-accent hover:accent-primary'}`}
 									/>
 								</div>
 							))}
 						</div>
 					</div>
 
-					{/* Written Review */}
+					{/* Review Text */}
 					<div>
-						<h3 className="text-lg font-semibold text-white border-l-4 border-accent pl-3 mb-4">My Thoughts</h3>
-						<textarea disabled={!isLoggedIn}
+						<h3 className="text-lg font-semibold text-white border-l-4 border-accent pl-3 mb-4">Thoughts</h3>
+						<textarea
 							value={reviewText}
 							onChange={(e) => setReviewText(e.target.value)}
-							placeholder="What did you think about this?"
-							className="w-full h-32 bg-black/30 text-white p-4 rounded-xl border border-white/10 focus:border-accent focus:outline-none resize-none"
+							disabled={readOnly} // <--- DISABLED IF READ ONLY
+							placeholder={readOnly ? "No written review." : "Write your review here..."}
+							className={`w-full h-32 bg-black/30 text-white p-4 rounded-xl border border-white/10 focus:outline-none resize-none ${readOnly ? 'text-gray-400' : 'focus:border-accent'}`}
 						/>
 					</div>
 				</div>
 
-				{/* Footer Actions */}
-				<div className="p-6 border-t border-white/10 bg-black/20 flex justify-between">
-
-					{/* Delete Button (Only shows if editing) */}
+				{/* Footer */}
+				<div className="p-6 border-t border-white/10 bg-black/20 flex justify-between items-center">
+					{/* Left Side: Delete (Only if NOT read only and editing existing) */}
 					<div>
-						{item._id && isLoggedIn && (
-							<button
-								onClick={handleDelete}
-								disabled={isDeleting}
-								className="px-4 py-2 rounded-full text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors flex items-center gap-2"
-							>
-								<FaTrash size={14} /> Delete
+						{!readOnly && item._id && (
+							<button onClick={handleDelete} disabled={isDeleting} className="text-red-400 hover:text-red-300 flex items-center gap-2 text-sm">
+								<FaTrash /> Delete
 							</button>
 						)}
 					</div>
 
+					{/* Right Side: Close/Save */}
 					<div className="flex gap-3">
 						<button onClick={onClose} className="px-6 py-2 rounded-full text-gray-300 hover:text-white font-medium hover:bg-white/5 transition-colors">
-							Cancel
+							{readOnly ? 'Close' : 'Cancel'}
 						</button>
-						{isLoggedIn && (
+						{!readOnly && (
 							<button
 								onClick={handleSubmit}
 								disabled={isSubmitting}
-								className="px-8 py-2 rounded-full bg-accent hover:bg-primary text-white font-bold shadow-lg shadow-accent/20 flex items-center gap-2 transition-all transform hover:scale-105"
+								className="px-8 py-2 rounded-full bg-accent hover:bg-primary text-white font-bold shadow-lg shadow-accent/20 flex items-center gap-2 transition-transform hover:scale-105"
 							>
 								{isSubmitting ? 'Saving...' : <><FaSave /> Save</>}
 							</button>
