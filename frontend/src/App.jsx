@@ -2,16 +2,25 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import CategoryPage from './pages/CategoryPage';
+import RequireAuth from './components/RequireAuth'; // <--- 1. Import this
 
 function App() {
 	return (
 		<Router>
 			<Routes>
+				{/* Public Route: Login Page */}
 				<Route path="/login" element={<LoginPage />} />
 
-				<Route path="/" element={<Layout />}>
-					{/* 1. MY COLLECTION (Default) */}
+				{/* Protected Routes: Everything else */}
+				<Route element={
+					<RequireAuth>
+						<Layout />
+					</RequireAuth>
+				}>
+					{/* Default redirect: If they login and go to /, send to /movies */}
 					<Route index element={<Navigate to="/movies" replace />} />
+
+					{/* My Routes */}
 					<Route path="movies" element={<CategoryPage type="movie" />} />
 					<Route path="tv" element={<CategoryPage type="tv" />} />
 					<Route path="anime" element={<CategoryPage type="anime" />} />
@@ -20,7 +29,7 @@ function App() {
 					<Route path="books" element={<CategoryPage type="book" />} />
 					<Route path="music" element={<CategoryPage type="music" />} />
 
-					{/* 2. FRIEND'S COLLECTION (Read Only) */}
+					{/* Friend Routes */}
 					<Route path="u/:username/movies" element={<CategoryPage type="movie" />} />
 					<Route path="u/:username/tv" element={<CategoryPage type="tv" />} />
 					<Route path="u/:username/anime" element={<CategoryPage type="anime" />} />
