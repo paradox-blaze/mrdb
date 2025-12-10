@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaSearch, FaUserFriends, FaChevronDown, FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa';
 import clsx from 'clsx';
-import { useAuth } from '../hooks/useAuth'; // <--- IMPORT THIS
+import { useAuth } from '../hooks/useAuth';
 
-// MASTER LIST
 const ALL_USERS = ["Aneesh", "Anuj", "Alwin", "Dhanush"];
 
 const navItems = [
@@ -18,7 +17,7 @@ const navItems = [
 ];
 
 export default function Navbar({ onSearch }) {
-	const { user: loggedInUser, logout } = useAuth(); // <--- USE THE HOOK
+	const { user: loggedInUser, logout } = useAuth();
 
 	const [query, setQuery] = useState('');
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -28,7 +27,7 @@ export default function Navbar({ onSearch }) {
 	const location = useLocation();
 	const navigate = useNavigate();
 
-	// FILTER LOGIC (Re-runs automatically when loggedInUser changes)
+	// FILTER LOGIC
 	const otherUsers = ALL_USERS.filter(u => u !== loggedInUser);
 
 	// URL PARSING
@@ -58,7 +57,6 @@ export default function Navbar({ onSearch }) {
 		setIsUserMenuOpen(false);
 	};
 
-	// ... (Keep handleSearchSubmit and getLink helpers as they were) ...
 	const handleSearchSubmit = (e) => {
 		e.preventDefault();
 		if (query.trim()) onSearch(query);
@@ -74,7 +72,7 @@ export default function Navbar({ onSearch }) {
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 
-					{/* LEFT: Logo & User Switcher */}
+					{/* --- LEFT: Logo & User Switcher --- */}
 					<div className="flex items-center gap-4 md:gap-6">
 						<Link to="/" className="flex items-center gap-2 flex-shrink-0">
 							<img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
@@ -97,13 +95,14 @@ export default function Navbar({ onSearch }) {
 								<FaChevronDown size={10} />
 							</button>
 
+							{/* DESKTOP DROPDOWN */}
 							{isUserMenuOpen && (
 								<div className="absolute top-full left-0 mt-2 w-56 bg-secondary border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1 animate-fade-in z-50">
 									<div className="px-4 py-2 text-xs text-gray-500 uppercase font-bold tracking-wider">
 										Switch Profile
 									</div>
 
-									{/* ME OPTION */}
+									{/* ME */}
 									<button onClick={() => handleUserSwitch('Me')} className="w-full text-left px-4 py-3 hover:bg-white/10 text-white flex items-center gap-2">
 										<span className={`w-2 h-2 rounded-full ${currentViewedUser === 'Me' ? 'bg-accent' : 'bg-gray-600'}`}></span>
 										{loggedInUser} (Me)
@@ -111,7 +110,7 @@ export default function Navbar({ onSearch }) {
 
 									<div className="border-t border-white/10 my-1"></div>
 
-									{/* OTHER FRIENDS */}
+									{/* FRIENDS */}
 									{otherUsers.map(friend => (
 										<button
 											key={friend}
@@ -125,7 +124,7 @@ export default function Navbar({ onSearch }) {
 
 									<div className="border-t border-white/10 my-1"></div>
 
-									{/* LOGOUT BUTTON */}
+									{/* LOGOUT BUTTON (DESKTOP) */}
 									<button onClick={handleLogout} className="w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center gap-2 text-sm font-bold">
 										<FaSignOutAlt /> Logout
 									</button>
@@ -134,9 +133,7 @@ export default function Navbar({ onSearch }) {
 						</div>
 					</div>
 
-					{/* ... (CENTER and RIGHT sections remain exactly the same as previous) ... */}
-					{/* Paste the rest of your Navbar code (Desktop Links, Search, Mobile Menu) here */}
-					{/* CENTER: DESKTOP NAV LINKS */}
+					{/* --- CENTER: Desktop Links --- */}
 					<div className="hidden md:flex space-x-1">
 						{navItems.map((item) => {
 							const targetLink = getLink(item.path);
@@ -149,7 +146,7 @@ export default function Navbar({ onSearch }) {
 						})}
 					</div>
 
-					{/* RIGHT: Search & Mobile Menu */}
+					{/* --- RIGHT: Search & Mobile Menu --- */}
 					<div className="flex items-center gap-2 sm:gap-4">
 						<div className={clsx("flex items-center transition-all duration-300", showSearch ? "absolute top-16 left-0 w-full px-4 bg-background pb-4 border-b border-white/10 md:static md:w-auto md:p-0 md:bg-transparent md:border-none" : "w-auto")}>
 							{showSearch ? (
@@ -178,10 +175,11 @@ export default function Navbar({ onSearch }) {
 				</div>
 			</div>
 
-			{/* MOBILE MENU */}
+			{/* --- MOBILE MENU (EXPANDED) --- */}
 			{isMobileMenuOpen && (
 				<div className="md:hidden bg-background border-b border-white/10 animate-fade-in">
 					<div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+						{/* Nav Links */}
 						{navItems.map((item) => {
 							const targetLink = getLink(item.path);
 							const isActive = location.pathname.includes(item.path);
@@ -191,6 +189,16 @@ export default function Navbar({ onSearch }) {
 								</Link>
 							);
 						})}
+
+						<div className="border-t border-white/10 my-2"></div>
+
+						{/* LOGOUT BUTTON (MOBILE) - ADDED HERE */}
+						<button
+							onClick={handleLogout}
+							className="w-full text-left px-3 py-2 text-red-400 hover:text-red-300 hover:bg-white/5 rounded-md text-base font-bold flex items-center gap-2"
+						>
+							<FaSignOutAlt /> Logout
+						</button>
 					</div>
 				</div>
 			)}
