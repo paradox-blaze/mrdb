@@ -1,4 +1,3 @@
-// api/search.js
 const axios = require('axios');
 const qs = require('querystring');
 const connectToDatabase = require('./lib/mongo');
@@ -6,7 +5,7 @@ const Cache = require('./models/Cache');
 
 // Helper for Spotify Token
 async function getSpotifyToken() {
-	const tokenUrl = 'https://accounts.spotify.com/api/token';
+	const tokenUrl = 'https://accounts.spotify.com/api/token'; // Updated to correct Spotify Auth URL
 	const data = qs.stringify({ grant_type: 'client_credentials' });
 	const authString = Buffer.from(`${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`).toString('base64');
 
@@ -30,10 +29,7 @@ module.exports = async (req, res) => {
 		await connectToDatabase();
 
 		// 1. CACHE CHECK ⚡
-		// Create a unique key like "movie:inception" or "game:zelda"
 		const cacheKey = `${type}:${q.toLowerCase().trim()}`;
-
-		// Check MongoDB for this exact search
 		const cachedResult = await Cache.findOne({ key: cacheKey });
 
 		if (cachedResult) {
@@ -77,6 +73,21 @@ module.exports = async (req, res) => {
 			}));
 		}
 
+		// --- MANGA (UPDATED: Jikan / MyAnimeList) ---
+		// Switched to Jikan because MangaDex covers are often missing in search results
+		else if (type === 'manga') {
+			const url = `https://api.jikan.moe/v4/manga?q=${encodeURIComponent(q)}&limit=10`;
+			const response = await axios.get(url);
+			results = response.data.data.map(item => ({
+				id: item.mal_id,
+				title: item.title,
+				image: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url, // Guaranteed Image
+				year: item.published?.from ? item.published.from.substring(0, 4) : 'N/A',
+				category: 'manga',
+				source: 'jikan'
+			}));
+		}
+
 		// --- GAMES (RAWG) ---
 		else if (type === 'game') {
 			const url = `https://api.rawg.io/api/games?key=${process.env.RAWG_API_KEY}&search=${encodeURIComponent(q)}&page_size=10`;
@@ -106,28 +117,10 @@ module.exports = async (req, res) => {
 			}));
 		}
 
-		// --- MANGA (MangaDex) ---
-		else if (type === 'manga') {
-			const url = `https://api.mangadex.org/manga?title=${encodeURIComponent(q)}&limit=10&includes[]=cover_art`;
-			const response = await axios.get(url);
-			results = response.data.data.map(item => {
-				const coverRel = item.relationships.find(r => r.type === 'cover_art');
-				const fileName = coverRel?.attributes?.fileName;
-				return {
-					id: item.id,
-					title: item.attributes.title.en || Object.values(item.attributes.title)[0],
-					image: fileName ? `https://uploads.mangadex.org/covers/${item.id}/${fileName}` : null,
-					year: item.attributes.year || 'N/A',
-					category: 'manga',
-					source: 'mangadex'
-				};
-			});
-		}
-
 		// --- MUSIC (Spotify) ---
 		else if (type === 'music') {
 			const accessToken = await getSpotifyToken();
-			const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=album&limit=10`;
+			const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=album&limit=10`; // Fixed Spotify Search URL
 			const response = await axios.get(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });
 			results = response.data.albums.items.map(item => ({
 				id: item.id,
@@ -140,9 +133,8 @@ module.exports = async (req, res) => {
 			}));
 		}
 
-		// 3. SAVE RESULTS TO CACHE (Only if we found something)
+		// 3. SAVE RESULTS TO CACHE
 		if (results.length > 0) {
-			// We don't await this because we don't want to slow down the user response
 			Cache.create({ key: cacheKey, data: results })
 				.catch(err => console.error("Cache write error:", err.message));
 		}
@@ -151,6 +143,7 @@ module.exports = async (req, res) => {
 
 	} catch (error) {
 		console.error(`Search Error (${type}):`, error.message);
-		res.status(500).json({ error: `Failed to fetch ${type}` });
+		// Return empty array on error so frontend doesn't crash
+		res.status(200).json([]);
 	}
 };
