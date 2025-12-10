@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth'; // <--- IMPORT THIS
 
 export default function LoginPage() {
+	const { login } = useAuth(); // <--- USE THIS
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
 	const [error, setError] = useState('');
@@ -15,9 +17,8 @@ export default function LoginPage() {
 		try {
 			const res = await axios.post('/api/auth/login', { username, password });
 
-			// Save Token AND Username
-			localStorage.setItem('token', res.data.token);
-			localStorage.setItem('currentUser', res.data.username); // Save who I am
+			// Use the hook to login (this triggers the Navbar update event)
+			login(res.data.token, res.data.username);
 
 			axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
 			navigate('/');
@@ -26,8 +27,10 @@ export default function LoginPage() {
 		}
 	};
 
+	// ... (Rest of JSX remains the same) ...
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-background text-text">
+			{/* ... copy your previous form code here ... */}
 			<form onSubmit={handleLogin} className="bg-secondary/20 p-8 rounded-2xl border border-white/10 w-96 shadow-2xl backdrop-blur-md">
 				<h1 className="text-3xl font-bold mb-2 text-center text-white">Welcome Back</h1>
 				<p className="text-gray-400 text-center mb-8 text-sm">Login to your collection</p>
