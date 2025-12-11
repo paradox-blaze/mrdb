@@ -1,26 +1,36 @@
+import { useEffect } from 'react'; // <--- 1. Import useEffect
+import axios from 'axios';         // <--- 2. Import axios
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import CategoryPage from './pages/CategoryPage';
-import RequireAuth from './components/RequireAuth'; // <--- 1. Import this
+import RequireAuth from './components/RequireAuth';
 
 function App() {
+
+	// <--- 3. ADD THIS WHOLE BLOCK ---
+	// This restores the "Session" if you refresh the page
+	useEffect(() => {
+		const token = localStorage.getItem('token');
+		if (token) {
+			axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+		}
+	}, []);
+	// --------------------------------
+
 	return (
 		<Router>
 			<Routes>
-				{/* Public Route: Login Page */}
 				<Route path="/login" element={<LoginPage />} />
 
-				{/* Protected Routes: Everything else */}
+				{/* PROTECTED AREA */}
 				<Route element={
 					<RequireAuth>
 						<Layout />
 					</RequireAuth>
 				}>
-					{/* Default redirect: If they login and go to /, send to /movies */}
 					<Route index element={<Navigate to="/movies" replace />} />
 
-					{/* My Routes */}
 					<Route path="movies" element={<CategoryPage type="movie" />} />
 					<Route path="tv" element={<CategoryPage type="tv" />} />
 					<Route path="anime" element={<CategoryPage type="anime" />} />
