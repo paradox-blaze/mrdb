@@ -5,7 +5,8 @@ const USERS = {
 	"Aneesh": process.env.ADMIN_PASSWORD,   // You
 	"Anuj": process.env.ANUJ_PASSWORD,
 	"Dhanush": process.env.DHANUSH_PASSWORD,
-	"Alwin": process.env.ALWIN_PASSWORD
+	"Alwin": process.env.ALWIN_PASSWORD,
+	"Akshat": process.env.AKSHAT_PASSWORD
 };
 
 module.exports = (req, res) => {

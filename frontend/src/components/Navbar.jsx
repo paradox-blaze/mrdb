@@ -4,7 +4,7 @@ import { FaSearch, FaUserFriends, FaChevronDown, FaBars, FaTimes, FaSignOutAlt }
 import clsx from 'clsx';
 import { useAuth } from '../hooks/useAuth';
 
-const ALL_USERS = ["Aneesh", "Anuj", "Alwin", "Dhanush"];
+const ALL_USERS = ["Aneesh", "Anuj", "Alwin", "Dhanush", "Akshat"];
 
 const navItems = [
 	{ name: 'Movies', path: '/movies' },
