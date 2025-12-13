@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
 			query.username = "Aneesh"; // Default homepage shows YOUR reviews
 		}
 
-		const reviews = await Review.find(query).sort({ createdAt: -1 });
+		const reviews = await Review.find(query).sort({ overallScore: -1, createdAt: -1 });
 		return res.status(200).json(reviews);
 	}
 
