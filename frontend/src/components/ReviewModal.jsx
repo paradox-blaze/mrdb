@@ -45,21 +45,42 @@ export default function ReviewModal({ item, category, onClose, onSave, readOnly 
 	};
 
 	const handleSubmit = async () => {
-		if (readOnly) return;
+		if (readOnly) return; // Security check
 		setIsSubmitting(true);
+
 		try {
+			// CASE 1: UPDATING an existing review (it has an _id)
 			if (item._id) {
-				// PUT (Update) logic...
-				await axios.put('/api/reviews', { /* ... existing code ... */ });
-			} else {
-				// POST (Create) logic...
-				await axios.post('/api/reviews', { /* ... existing code ... */ });
+				await axios.put('/api/reviews', {
+					id: item._id,
+					reviewText,
+					ratingBreakdown: ratings
+				});
 			}
-			onSave();
-			onClose();
+			// CASE 2: CREATING a new review
+			else {
+				const payload = {
+					title: item.title,
+					category: category,
+					itemId: item.id || item.itemId, // Handles both API items and DB items
+					posterUrl: item.image || item.posterUrl,
+					subtitle: item.year || item.subtitle || item.artist || 'N/A',
+					reviewText,
+					ratingBreakdown: ratings,
+				};
+				await axios.post('/api/reviews', payload);
+			}
+
+			// If successful:
+			onSave(); // Refresh the grid
+			onClose(); // Close the modal
+
 		} catch (err) {
-			// NEW: Show the specific error from the backend
-			alert(err.response?.data?.error || 'Failed to save. Please try again.');
+			// ERROR HANDLING
+			// If backend sends a specific message (like "Duplicate"), show that.
+			// Otherwise, show a generic "Failed" message.
+			const message = err.response?.data?.error || 'Failed to save. Please try again.';
+			alert(message);
 		} finally {
 			setIsSubmitting(false);
 		}
