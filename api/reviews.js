@@ -42,20 +42,33 @@ module.exports = async (req, res) => {
 		try {
 			const { title, category, itemId, posterUrl, subtitle, reviewText, ratingBreakdown } = req.body;
 
+			// 1. CHECK FOR DUPLICATE 🛑
+			const existingReview = await Review.findOne({
+				itemId: itemId,
+				username: currentUser
+			});
+
+			if (existingReview) {
+				return res.status(409).json({ error: `You have already reviewed "${title}"` });
+			}
+
+			// 2. Calculate Score
 			const scores = Object.values(ratingBreakdown);
 			const total = scores.reduce((a, b) => a + Number(b), 0);
 			const average = scores.length > 0 ? (total / scores.length).toFixed(1) : 0;
 
+			// 3. Save New Review
 			const newReview = new Review({
 				title, category, itemId, posterUrl, subtitle, reviewText, ratingBreakdown,
 				overallScore: average,
-				username: currentUser // <--- SAVING THE OWNER
+				username: currentUser
 			});
 
 			await newReview.save();
 			return res.status(201).json({ message: 'Review saved', review: newReview });
+
 		} catch (error) {
-			return res.status(500).json({ error: 'Failed to save' });
+			return res.status(500).json({ error: 'Failed to save review' });
 		}
 	}
 

@@ -49,27 +49,17 @@ export default function ReviewModal({ item, category, onClose, onSave, readOnly 
 		setIsSubmitting(true);
 		try {
 			if (item._id) {
-				await axios.put('/api/reviews', {
-					id: item._id,
-					reviewText,
-					ratingBreakdown: ratings
-				});
+				// PUT (Update) logic...
+				await axios.put('/api/reviews', { /* ... existing code ... */ });
 			} else {
-				const payload = {
-					title: item.title,
-					category: category,
-					itemId: item.id || item.itemId,
-					posterUrl: item.image || item.posterUrl,
-					subtitle: item.year || item.subtitle || item.artist || 'N/A',
-					reviewText,
-					ratingBreakdown: ratings,
-				};
-				await axios.post('/api/reviews', payload);
+				// POST (Create) logic...
+				await axios.post('/api/reviews', { /* ... existing code ... */ });
 			}
 			onSave();
 			onClose();
 		} catch (err) {
-			alert('Failed to save');
+			// NEW: Show the specific error from the backend
+			alert(err.response?.data?.error || 'Failed to save. Please try again.');
 		} finally {
 			setIsSubmitting(false);
 		}
