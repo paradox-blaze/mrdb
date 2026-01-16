@@ -71,10 +71,23 @@ export default function CategoryPage({ type }) {
 
 	// Display Logic
 	let itemsToDisplay = savedReviews;
+
 	if (searchQuery) {
 		if (isMyCollection) {
-			itemsToDisplay = searchResults;
+			// SMART MERGE: 🧠
+			// If we find a search result that matches a saved review, 
+			// swap it with the saved review so we can EDIT it instead of adding a duplicate.
+			itemsToDisplay = searchResults.map(apiResult => {
+				// Find if this API item exists in my saved list
+				// Note: API uses 'id', DB uses 'itemId'
+				const existingReview = savedReviews.find(r => r.itemId === apiResult.id || r.itemId === apiResult.itemId);
+
+				// If it exists, show MY version (with stars and _id). If not, show API version.
+				return existingReview || apiResult;
+			});
+
 		} else {
+			// Friend's page: Just filter their list
 			itemsToDisplay = savedReviews.filter(r =>
 				r.title.toLowerCase().includes(searchQuery.toLowerCase())
 			);
