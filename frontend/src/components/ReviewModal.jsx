@@ -236,7 +236,7 @@ export default function ReviewModal({
             </button>
             {!readOnly && (
               <button
-                onClick={handleSave}
+                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="px-8 py-2 rounded-full bg-accent hover:bg-primary text-white font-bold shadow-lg shadow-accent/20 flex items-center gap-2 transition-transform hover:scale-105"
               >
