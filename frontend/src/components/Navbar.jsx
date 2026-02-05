@@ -11,7 +11,7 @@ import {
 import clsx from "clsx";
 import { useAuth } from "../hooks/useAuth";
 
-const ALL_USERS = ["Aneesh", "Anuj", "Alwin", "Dhanush", "Akshat", "BG"];
+const ALL_USERS = ["Aneesh", "Anuj", "Alwin", "Dhanush", "Akshat", "BG","Praneel"];
 
 const navItems = [
   { name: "Movies", path: "/movies" },

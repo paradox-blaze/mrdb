@@ -8,6 +8,7 @@ const USERS = {
   Alwin: process.env.ALWIN_PASSWORD,
   Akshat: process.env.AKSHAT_PASSWORD,
   BG: process.env.BG_PASSWORD,
+  Praneel: process.env.PRANEEL_PASSWORD,
 };
 
 module.exports = (req, res) => {
